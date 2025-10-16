@@ -99,6 +99,16 @@ export class ZKGraphView extends ItemView {
         switch (this.plugin.retrivalforLocaLgraph.type) {
             case '1': //click graph
                 this.currentFile = this.app.vault.getFileByPath(this.plugin.retrivalforLocaLgraph.filePath);
+                if (this.currentFile === null) {
+                    let targetNode = this.plugin.MainNotes.find(n => n.ID === this.plugin.retrivalforLocaLgraph.ID);
+                    if (!targetNode) {
+                        targetNode = this.plugin.MainNotes.find(n => n.file.path === this.plugin.retrivalforLocaLgraph.filePath);
+                    }
+                    if (targetNode) {
+                        this.currentFile = targetNode.file;
+                        this.plugin.retrivalforLocaLgraph.ID = targetNode.ID;
+                    }
+                }
                 break;
             default: // open file
                 
@@ -646,11 +656,28 @@ export class ZKGraphView extends ItemView {
             }
         }
 
+        if(this.familyNodeArr.length === 0){
+            let fallbackNode: ZKNode | undefined;
+            if (this.plugin.retrivalforLocaLgraph.ID !== '') {
+                fallbackNode = this.plugin.MainNotes.find(n => n.ID === this.plugin.retrivalforLocaLgraph.ID);
+            }
+            if (!fallbackNode) {
+                fallbackNode = this.plugin.MainNotes.find(n => n.file === currentFile);
+            }
+            if (fallbackNode) {
+                this.familyNodeArr = [fallbackNode];
+            }
+        }
+
+        if (this.familyNodeArr.length === 0) {
+            return;
+        }
+
         //calculate width for siblings
         if(this.plugin.settings.siblingLenToggle === true){
             const maxLength =  Math.max(...this.familyNodeArr.map(n=>n.IDArr.length));
             const minLength =  Math.min(...this.familyNodeArr.map(n=>n.IDArr.length));
-    
+
             for(let i=minLength;i<=maxLength;i++){
                 let layerNodes = this.familyNodeArr.filter(n=>n.IDArr.length === i);
                 if(layerNodes.length > 1){
@@ -658,12 +685,12 @@ export class ZKGraphView extends ItemView {
                     for(let node of layerNodes){
                         node.fixWidth = 6 * maxTextLen + 6;
                     }
-                }else{
+                }else if(layerNodes.length === 1){
                     layerNodes[0].fixWidth = 0;
                 }
-                
+
             }
-            
+
         }
     }
 
@@ -695,7 +722,12 @@ export class ZKGraphView extends ItemView {
         let outlinkArr: TFile[] = [];
         const resolvedLinks = this.app.metadataCache.resolvedLinks;
 
-        let outlinks: string[] = Object.keys(resolvedLinks[currentFile.path]);
+        const linkMap = resolvedLinks[currentFile.path];
+        if (!linkMap) {
+            return outlinkArr;
+        }
+
+        let outlinks: string[] = Object.keys(linkMap);
 
         if(this.plugin.settings.FileExtension == "md"){
             outlinks = outlinks.filter(link=>link.endsWith(".md"))

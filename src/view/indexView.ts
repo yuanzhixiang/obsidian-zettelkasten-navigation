@@ -720,19 +720,31 @@ export class ZKIndexView extends ItemView {
                         if (isVirtualNode) {
                             nodeGArr[i].addClass("zk-virtual-node");
                             nodeGArr[i].addEventListener("click", async (event: MouseEvent) => {
-                                if (!event.shiftKey) {
+                                if (event.shiftKey) {
+                                    this.plugin.settings.lastRetrival =  {
+                                        type: 'main',
+                                        ID: node.ID,
+                                        displayText: node.displayText,
+                                        filePath: node.file.path,
+                                        openTime: moment().format("YYYY-MM-DD HH:mm:ss"),
+                                    }
+                                    await this.plugin.clearShowingSettings();
+                                    await this.IndexViewInterfaceInit();
+                                    return;
+                                }
+
+                                if (event.altKey) {
+                                    this.plugin.retrivalforLocaLgraph = {
+                                        type: '1',
+                                        ID: node.ID,
+                                        filePath: node.file.path,
+                                    };
+                                    this.plugin.openGraphView();
                                     event.preventDefault();
                                     return;
                                 }
-                                this.plugin.settings.lastRetrival =  {
-                                    type: 'main',
-                                    ID: node.ID,
-                                    displayText: node.displayText,
-                                    filePath: node.file.path,
-                                    openTime: moment().format("YYYY-MM-DD HH:mm:ss"),
-                                }
-                                await this.plugin.clearShowingSettings();
-                                await this.IndexViewInterfaceInit();
+
+                                event.preventDefault();
                             });
                             continue;
                         }
