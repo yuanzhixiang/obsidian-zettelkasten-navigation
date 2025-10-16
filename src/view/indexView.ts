@@ -713,10 +713,16 @@ export class ZKIndexView extends ItemView {
 
                     for (let i = 0; i < nodeArr.length; i++) {
 
-                        let link = document.createElement('a');
-                        link.addClass("internal-link");
                         let nodePosStr = nodeGArr[i].id.split('-')[1];
                         let node = this.plugin.MainNotes.filter(n => n.position == Number(nodePosStr))[0];
+
+                        const isVirtualNode = node.file.extension === "virtual" || node.file.path.startsWith("__virtual__/");
+                        if (isVirtualNode) {
+                            nodeGArr[i].addClass("zk-virtual-node");
+                            continue;
+                        }
+                        let link = document.createElement('a');
+                        link.addClass("internal-link");
                         link.textContent = nodeArr[i].getText();
                         nodeArr[i].textContent = "";
                         nodeArr[i].appendChild(link);

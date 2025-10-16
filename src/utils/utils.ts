@@ -14,6 +14,39 @@ function extractLetters(id: string, startIndex: number): { letters: string; leng
     };
 }
 
+function sliceIDBySegments(id: string, depth: number): string {
+    if (depth <= 0) {
+        return "";
+    }
+
+    let segmentCount = 0;
+    let index = 0;
+
+    while (index < id.length && segmentCount < depth) {
+        const char = id[index];
+
+        if (/^\d$/.test(char)) {
+            const match = id.slice(index).match(/^\d+/);
+            if (match) {
+                index += match[0].length;
+                segmentCount++;
+                continue;
+            }
+        }
+
+        if (/^[a-zA-Z_-]$/.test(char)) {
+            const { length } = extractLetters(id, index);
+            index += length;
+            segmentCount++;
+            continue;
+        }
+
+        index++;
+    }
+
+    return id.slice(0, index);
+}
+
 // formatting Luhmann style IDs
 export async function ID_formatting(id: string, arr: string[], siblingsOrder:string): Promise<string[]> {
 
@@ -240,6 +273,62 @@ export async function mainNoteInit(plugin:ZKNavigationPlugin){
             plugin.MainNotes.push(...duplicateNodes);
             plugin.MainNotes = uniqueBy(plugin.MainNotes);
         }
+    }
+
+    // 自动创建缺失的父节点
+    const virtualNodes: ZKNode[] = [];
+    for (let node of plugin.MainNotes) {
+        for (let depth = 1; depth < node.IDArr.length; depth++) {
+            const parentIDArr = node.IDArr.slice(0, depth);
+            const parentIDStr = parentIDArr.toString();
+
+            if (plugin.MainNotes.find(n => n.IDArr.toString() === parentIDStr) ||
+                virtualNodes.find(n => n.IDArr.toString() === parentIDStr)) {
+                continue;
+            }
+
+            const parentID = sliceIDBySegments(node.ID, depth);
+            if (parentID === "") {
+                continue;
+            }
+
+            const parentSlug = parentIDArr.join("-");
+
+            const virtualFile = {
+                path: `__virtual__/${parentSlug}`,
+                basename: parentSlug,
+                extension: "virtual",
+                name: parentSlug,
+                stat: { ctime: 0, mtime: 0, size: 0 },
+                parent: null,
+                vault: null,
+            } as unknown as TFile;
+
+            const virtualNode: ZKNode = {
+                ID: parentID,
+                IDArr: parentIDArr,
+                IDStr: parentIDStr,
+                position: 0,
+                file: virtualFile,
+                title: '(虚拟节点)',
+                displayText: '',
+                ctime: 0,
+                randomId: random(16),
+                nodeSons: 1,
+                startY: 0,
+                height: 0,
+                isRoot: false,
+                fixWidth: 0,
+                branchName: "",
+                gitNodePos: 0,
+            };
+
+            virtualNodes.push(virtualNode);
+        }
+    }
+
+    if (virtualNodes.length > 0) {
+        plugin.MainNotes.push(...virtualNodes);
     }
 
     plugin.MainNotes.sort((a, b) => a.IDStr.localeCompare(b.IDStr));
