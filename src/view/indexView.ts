@@ -719,6 +719,21 @@ export class ZKIndexView extends ItemView {
                         const isVirtualNode = node.file.extension === "virtual" || node.file.path.startsWith("__virtual__/");
                         if (isVirtualNode) {
                             nodeGArr[i].addClass("zk-virtual-node");
+                            nodeGArr[i].addEventListener("click", async (event: MouseEvent) => {
+                                if (!event.shiftKey) {
+                                    event.preventDefault();
+                                    return;
+                                }
+                                this.plugin.settings.lastRetrival =  {
+                                    type: 'main',
+                                    ID: node.ID,
+                                    displayText: node.displayText,
+                                    filePath: node.file.path,
+                                    openTime: moment().format("YYYY-MM-DD HH:mm:ss"),
+                                }
+                                await this.plugin.clearShowingSettings();
+                                await this.IndexViewInterfaceInit();
+                            });
                             continue;
                         }
                         let link = document.createElement('a');
