@@ -2,8 +2,21 @@ import ZKNavigationPlugin, { ZoomPanScale } from "main";
 import { loadMermaid, moment, Notice, TFile } from "obsidian";
 import { ZKNode } from "src/view/indexView";
 
+// 提取连续的字母
+function extractLetters(id: string, startIndex: number): { letters: string; length: number } {
+    let endIndex = startIndex;
+    while (endIndex < id.length && /^[a-zA-Z]$/.test(id[endIndex])) {
+        endIndex++;
+    }
+    return {
+        letters: id.substring(startIndex, endIndex),
+        length: endIndex - startIndex
+    };
+}
+
 // formatting Luhmann style IDs
 export async function ID_formatting(id: string, arr: string[], siblingsOrder:string): Promise<string[]> {
+
     if (/^[0-9]$/.test(id[0])) {
         let numStr = id.match(/\d+/g);
         if (numStr && numStr.length > 0) {
@@ -18,17 +31,19 @@ export async function ID_formatting(id: string, arr: string[], siblingsOrder:str
             return arr;
         }
     } else if (/^[a-zA-Z]$/.test(id[0])) {
-        let letterStr:string;
-        if(siblingsOrder === "letter"){
-            letterStr = id[0].padStart(5,"0");
-        }else{
-            letterStr = id[0];
-        }        
-        arr.push(letterStr)
-        if (id.length === 1) {
-            return arr;
+        // 提取连续的字母
+        const { letters, length } = extractLetters(id, 0);
+        let letterStr: string;
+        if (siblingsOrder === "letter") {
+            letterStr = letters.padStart(5, "0");
         } else {
-            return await ID_formatting(id.slice(1), arr, siblingsOrder);
+            letterStr = letters;
+        }
+        arr.push(letterStr);
+        if (length < id.length) {
+            return await ID_formatting(id.slice(length), arr, siblingsOrder);
+        } else {
+            return arr;
         }
     } else {
         if (id.length === 1) {
