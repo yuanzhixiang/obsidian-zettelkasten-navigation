@@ -399,6 +399,7 @@ export async function addSvgPanZoom(
     mermaidStr:string, height:number){
     
     const mermaid = await loadMermaid();
+    // 主要就是这里慢，耗时 3254ms 下面这个方法要占用 3072ms，占比 94%
     let { svg } = await mermaid.render(`${zkGraph.id}-svg`, mermaidStr);
             
     zkGraph.insertAdjacentHTML('beforeend', svg);
