@@ -2,10 +2,10 @@ import ZKNavigationPlugin, { ZoomPanScale } from "main";
 import { loadMermaid, moment, Notice, TFile } from "obsidian";
 import { ZKNode } from "src/view/indexView";
 
-// 提取连续的字母
+// 提取连续的字母(包括下划线和连字符)
 function extractLetters(id: string, startIndex: number): { letters: string; length: number } {
     let endIndex = startIndex;
-    while (endIndex < id.length && /^[a-zA-Z]$/.test(id[endIndex])) {
+    while (endIndex < id.length && /^[a-zA-Z_-]$/.test(id[endIndex])) {
         endIndex++;
     }
     return {
@@ -30,8 +30,8 @@ export async function ID_formatting(id: string, arr: string[], siblingsOrder:str
         } else {
             return arr;
         }
-    } else if (/^[a-zA-Z]$/.test(id[0])) {
-        // 提取连续的字母
+    } else if (/^[a-zA-Z_-]$/.test(id[0])) {
+        // 提取连续的字母(包括下划线和连字符)
         const { letters, length } = extractLetters(id, 0);
         let letterStr: string;
         if (siblingsOrder === "letter") {
